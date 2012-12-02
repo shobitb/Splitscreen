@@ -54,12 +54,15 @@
 </div>
 
 <script type="text/javascript">
+
 	var page_url = "";
+
 	$("#create-url").click(function() {
 		$.ajax({
-			url: '/create-url'
+			url: '/create_url',
+			type: 'get'
 		}).success(function(data) {
-			page_url = data.url_link
+			page_url = data.url;
 			$("#create-url").hide();
 			$("#url-here").html("<tt>http://localhost:5000/theater/"+page_url+"</tt>");
 			$("#copy-button").css("display","block");

@@ -47,12 +47,12 @@ def event_seek():
 	p['splitscreen-'+page_id].trigger('splitscreen-event-'+page_id, { 'currentTime': request.args.get('currentTime') })
 	return render_template('theater.html')
 
-@app.route('/create-url')
+@app.route('/create_url')
 def create_url():
 	chars = string.ascii_uppercase + string.digits
 	size = 15
 	url_id = ''.join(random.choice(chars) for x in range(size))
-	return jsonify({'url_link': url_id})
+	return jsonify({'url': url_id})
 
 @app.route('/url_movie_map')
 def url_movie_mapper():
