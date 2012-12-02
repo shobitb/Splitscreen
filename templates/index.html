@@ -1,0 +1,91 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="hero-unit">
+	<h1>Splitscreen</h1>
+	<p>Create your own virtual theater in 3 easy steps -- Create - Choose - Watch!</p>
+	<p>
+		<div class="container-fluid">
+			<!-- CREATE -->
+			<div class="row-fluid">
+				<div class="span12">
+					<h4>Create a URL</h4>
+					<button class="btn btn-primary" id="create-url">Create</button>
+					<div id="url-here"></div>
+					<button id="copy-button" style="display:none">Copy</button>	
+				</div>
+			</div>
+			<!-- - - - - - - - - - - - - - - - - - - - - - - - - - - -->
+			<!-- CHOOSE -->
+			<div class="row-fluid">
+				<div class="span12">
+					<h4>Choose what to watch</h4>
+					<a href="#movie-modal" role="button" class="btn btn-primary" data-toggle="modal">Choose</a>
+ 					<div id="movie-here"></div>
+					<!-- Modal -->
+					<div id="movie-modal" class="modal hide fade" tabindex="-1" role="dialog">
+					  <div class="modal-header">
+					    <button type="button" class="close" data-dismiss="modal" aria-hidden="true">×</button>
+					    <h3 id="modal-label">Select from the following movies</h3>
+					  </div>
+					  <div class="modal-body">
+					  	<ul>
+					    	{% for m in movies %}
+					    	<li><a href="#" onclick='get_movie_url("{{ m }}")'>{{ m }}</a></li>
+					    	{% endfor %}
+						</ul>
+					  </div>
+					  <div class="modal-footer">
+					    <button class="btn" data-dismiss="modal" aria-hidden="true">Close</button>
+					  </div>
+					</div>
+				</div>
+			</div>
+			<!-- - - - - - - - - - - - - - - - - - - - - - - - - - - -->
+			<!-- WATCH -->
+			<div class="row-fluid">
+				<div class="span12">
+					<h4>Enjoy the movie!</h4>
+					<button id="watch-button" class="btn btn-primary" style="display:none">Watch!</button>	
+				</div>
+			</div>
+			<!-- - - - - - - - - - - - - - - - - - - - - - - - - - - -->
+		</div>
+	</p>
+</div>
+
+<script type="text/javascript">
+	var page_url = "";
+	$("#create-url").click(function() {
+		$.ajax({
+			url: '/create-url'
+		}).success(function(data) {
+			page_url = data.url_link
+			$("#create-url").hide();
+			$("#url-here").html("<tt>http://localhost:5000/theater/"+page_url+"</tt>");
+			$("#copy-button").css("display","block");
+		});
+	});
+
+	function get_movie_url(mov) {
+		$.ajax({
+			url: '/url_movie_map',
+			data: { 'url': page_url,
+				   'movie': mov }
+		}).success(function(data) {
+			if (data.status == "success") {
+				$("#movie-modal").modal("hide");
+				$("#movie-here").html(mov);
+				$("#watch-button").css("display","block");
+			}
+		});
+	};
+
+	$("#watch-button").click(function(){
+		window.location="http://localhost:5000/theater/"+page_url;
+	});
+
+</script>
+{% endblock %}
+
+{% block script %}
+{% endblock %}

@@ -1,0 +1,53 @@
+{% extends "base.html" %}
+
+{% block head %}
+
+{% endblock %}
+
+{% block content %}
+
+<video id="video-screen" controls>
+	<source src="{{ movie_url }}" type="video/mp4" />
+</video>
+
+<script type="text/javascript">
+	var vid = document.getElementById("video-screen");
+
+	vid.addEventListener('pause', eventPaused);
+	
+	$("#video-screen").click(function() {
+		eventSeeked();
+	});
+	
+	function eventSeeked() {
+		$.ajax({
+			url: '/event',
+			type: 'GET',
+			data: { 'currentTime': vid.currentTime, 'page_id': page_id }
+		});
+    };
+    
+    function eventPaused() {
+		$.ajax({
+			url: '/event',
+			type: 'GET',
+			data: { 'currentTime': -1, 'page_id': page_id }
+		});
+    };
+        
+    var page_id = window.location.pathname.toString().replace(/\//g,"");
+    var channel_name = 'splitscreen-'+page_id;
+    var event_name = 'splitscreen-event-'+page_id;
+    var pusher = new Pusher('1578e782124a7bedfabc');
+	var channel = pusher.subscribe(channel_name);
+
+	channel.bind(event_name, function(data) {
+		if (data.currentTime != -1) {
+			vid.currentTime = data.currentTime;
+			vid.play();
+		} else { vid.pause(); }
+	});
+		
+</script>
+
+{% endblock %}
