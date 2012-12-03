@@ -13,8 +13,9 @@ app = Flask(__name__)
 
 # GLOBAL VARIABLES
 url_movie_mapping = {}
-base_url = 'https://s3.amazonaws.com/splitscreen-movies-bucket/'
+url_owner_mapping = {}
 bucket_name = "splitscreenmoviesbucket"
+
 @app.route('/')
 def index():
 	connection = S3Connection(config.s3_key,config.s3_secret)
@@ -44,7 +45,7 @@ def theater(theater_id):
 def event_seek():
 	page_id = request.args.get('page_id')
 	p = pusher.Pusher(app_id=config.app_id, key=config.app_key, secret=config.app_secret)
-	p['splitscreen-'+page_id].trigger('splitscreen-event-'+page_id, { 'currentTime': request.args.get('currentTime') })
+	p['presence-splitscreen-'+page_id].trigger('splitscreen-event-'+page_id, { 'userId': request.args.get('member_id'), 'currentTime': request.args.get('currentTime') })
 	return render_template('theater.html')
 
 @app.route('/create_url')
@@ -64,6 +65,31 @@ def url_movie_mapper():
 	movie_url = key.generate_url(18000) # url is available for 18000 seconds i.e. 5 hours
 	url_movie_mapping[page_url] = movie_url
 	return jsonify({'status': 'success'})
+
+@app.route('/pusher/presence_auth',methods=['POST'])
+def auth():
+	channel_name = request.form.get('channel_name')
+	socket_id = request.form.get('socket_id')
+	channel_data = {'user_id': socket_id}
+	channel_data['user_info'] = {'name' : "Name"}
+
+	p = pusher.Pusher(app_id=config.app_id, key=config.app_key, secret=config.app_secret)
+
+	auth = p[channel_name].authenticate(socket_id, channel_data)
+	return jsonify(auth)
+
+@app.route('/set_name',methods=['POST'])
+def set_name():
+	member_name = request.form.get('name')
+	return jsonify({'name' : member_name})
+
+@app.route('/set_theater_owner')
+def set_theater_owner():
+	page = request.args.get('page_id');
+	owner = request.args.get('owner')
+	if not url_owner_mapping.has_key(page):
+		url_owner_mapping[page] = owner
+	return jsonify({'owner': url_owner_mapping[page]})
 
 if __name__ == "__main__":
 	app.run(debug=True)
