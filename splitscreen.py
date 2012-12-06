@@ -14,6 +14,7 @@ app = Flask(__name__)
 # GLOBAL VARIABLES
 url_movie_mapping = {}
 url_owner_mapping = {}
+url_members_mapping = {}
 bucket_name = "splitscreenmoviesbucket"
 
 @app.route('/')
@@ -78,10 +79,24 @@ def auth():
 	auth = p[channel_name].authenticate(socket_id, channel_data)
 	return jsonify(auth)
 
-@app.route('/set_name',methods=['POST'])
-def set_name():
+@app.route('/add_member',methods=['POST'])
+def add_member():
+	b = False
 	member_name = request.form.get('name')
-	return jsonify({'name' : member_name})
+	page_id = request.form.get('page_id')
+	if not url_members_mapping.has_key(page_id):
+		url_members_mapping[page_id] = []
+	else:
+		for x in url_members_mapping[page_id]:
+			if x == member_name:
+				b = True
+				break
+	if b == False:
+		url_members_mapping[page_id].append(member_name)
+
+	p = pusher.Pusher(app_id=config.app_id, key=config.app_key, secret=config.app_secret)
+	p['presence-splitscreen-'+page_id].trigger('splitscreen-event-'+page_id, { 'urlMembers': url_members_mapping[page_id] })
+	return jsonify({'userInfo': member_name})
 
 @app.route('/set_theater_owner')
 def set_theater_owner():
@@ -90,6 +105,15 @@ def set_theater_owner():
 	if not url_owner_mapping.has_key(page):
 		url_owner_mapping[page] = owner
 	return jsonify({'owner': url_owner_mapping[page]})
+
+@app.route('/send_chat', methods=['POST'])
+def send_chat():
+	chat_message = request.form.get('chat')
+	page_id = request.form.get('page_id')
+	sender = request.form.get('sender')
+	p = pusher.Pusher(app_id=config.app_id, key=config.app_key, secret=config.app_secret)
+	p['presence-splitscreen-'+page_id].trigger('splitscreen-event-'+page_id, {'chatMessage': chat_message, 'sender': sender})
+	return jsonify({'userInfo': sender})
 
 if __name__ == "__main__":
 	app.run(debug=True)

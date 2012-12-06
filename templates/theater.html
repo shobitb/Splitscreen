@@ -6,56 +6,122 @@
 
 {% block content %}
 
-
 	<div class="row-fluid">
+		<div class="span8">
+			<div class="row-fluid">
+				<div class="span12 alert alert-success">
+					<h4>Now Playing:</h4>
+					<hr>
+					<video id="video-screen" class="pull-left">
+						<source src="{{ movie_url }}" type="video/mp4" />						
+					</video>
+					<span class="pull-right">
+						Controls
+					</span>
+				</div>
+			</div>
 
-		<div class="span2" id="members-here">
-			<ul id="list-of-members">
-			</ul>
+			<div class="row-fluid">
+				<div class="span12 alert alert-info">
+					<h4>Who's In:</h4>
+					<hr>
+					<div id="list-of-members">
+					</div>
+				</div>
+			</div>
 		</div>
 
-		<div class="span7" align="center">
-			<h3 id="movie-title"><h3>
-			<video id="video-screen">
-				<source src="{{ movie_url }}" type="video/mp4" />
-			</video>
+		<div class="span4 alert alert-warning">
+			<div class="row-fluid">
+				<div class="span12">
+					<h4>Chat:</h4>
+					<hr>
+					<div id="chat-area" style="height:350px; overflow:auto;color:black">
+					</div>
+				</div>
+			</div>
+			<div class="row-fluid">
+				<form class="form span12" action="#">
+					<textarea id="chat-message" rows="3" class="span12"></textarea>
+					<br>
+					<span class="help-block"><small>Ctrl+Enter to send</small></span>
+					<button type="submit" class="pull-right btn btn-primary" id="chat-send-button">Send</button>
+				</form>
+			</div>
 		</div>
 
-		<div class="span3">
-		</div>
 		<div id="member-modal" class="modal hide fade" tabindex="-1" role="dialog">
 			<div class="modal-header">
 				<button type="button" class="close" data-dismiss="modal" aria-hidden="true">×</button>
 				<h3 id="modal-label">Enter your name</h3>
 			</div>
 			<div class="modal-body">
-				<input type="text" id="member-name-field" name="member_name" class="span12" \>
+				<input type="text" id="member-name-field" name="member_name" class="span12" />
 			</div>
 			<div class="modal-footer">
 				<button class="btn btn-primary" id="member-modal-button" data-dismiss="modal" aria-hidden="true">Submit</button>
 			</div>
 		</div>
-
 	</div>
 
+	
 <script type="text/javascript">
-	var vid = document.getElementById("video-screen");
-	var member_name = "";
 
-	$("#member-modal-button").click(function() {
-		member_name = $("#member-name-field").val();
-		$.ajax({
-			url: '/set_name',
-			type: 'post',
-			data: { 'name' : member_name }
-		}).success(function(data) {
-			userInfo=data.name;
-		})
+	Pusher.channel_auth_endpoint = '/pusher/presence_auth';   
+    var pageId = window.location.pathname.toString().replace(/\//g,"");
+    var channelName = 'presence-splitscreen-'+pageId;
+    var eventName = 'splitscreen-event-'+pageId;
+    var pusher = new Pusher('1578e782124a7bedfabc');
+	var channel = pusher.subscribe(channelName);
+
+	var me;
+	var userId;
+	var userInfo = "Anonymous"
+	var videoOwner = "";
+
+	var vid = document.getElementById("video-screen");
+
+	$(document).ready(function() {
+		$("#member-modal").modal("show");
 	});
 
+	$("#member-modal-button").click(function() {
+		userInfo = $("#member-name-field").val();
+		$.ajax({
+			url: '/add_member',
+			type: 'post',
+			data: { 'name' : userInfo, 'page_id': pageId }
+		});
+	});
+
+	$("#chat-message").keypress(function (e) {
+		if (e.which == 10) {
+			submitChatMessage();
+		}
+	})
+
+	$("#chat-send-button").click(function() {
+		submitChatMessage();
+	});
+
+	function submitChatMessage() {
+		chatMessage = $("#chat-message").val()
+		$.ajax({
+			url: '/send_chat',
+			type: 'POST',
+			data: { 'chat': chatMessage, 'page_id': pageId, 'sender': userInfo }
+		}).success(function() {
+			$("#chat-message").val("");
+			$("#chat-area").each( function() 
+			{
+			   var scrollHeight = Math.max(this.scrollHeight, this.clientHeight);
+			   this.scrollTop = scrollHeight - this.clientHeight;
+			});
+		})
+	}
 
 	$("#video-screen").click(function() {
-		if (videoowner == userId) {
+		if (videoOwner == userId) {
 			eventSeeked();
 		}
 	});
@@ -64,33 +130,21 @@
 		$.ajax({
 			url: '/event',
 			type: 'GET',
-			data: { 'currentTime': vid.currentTime, 'page_id': page_id, 'member_id': userId }
+			data: { 'currentTime': vid.currentTime, 'page_id': pageId, 'member_id': userId }
 		});
     };
     
     vid.addEventListener('pause', eventPaused);
 	
     function eventPaused() {
-    	if (userId == videoowner) {
+    	if (userId == videoOwner) {
     		$.ajax({
 				url: '/event',
 				type: 'GET',
-				data: { 'currentTime': -1, 'page_id': page_id, 'member_id': userId }
+				data: { 'currentTime': -1, 'page_id': pageId, 'member_id': userId }
 			});
     	}
     };
-
-
-    Pusher.channel_auth_endpoint = '/pusher/presence_auth';   
-    var page_id = window.location.pathname.toString().replace(/\//g,"");
-    var channel_name = 'presence-splitscreen-'+page_id;
-    var event_name = 'splitscreen-event-'+page_id;
-    var pusher = new Pusher('1578e782124a7bedfabc');
-	var channel = pusher.subscribe(channel_name);
-	var me;
-	var userId;
-	var userInfo;
-	var videoowner = "";
 
 	channel.bind('pusher:subscription_error', function(statusCode) {
 			alert('Problem subscribe to "presence-channel": ' + statusCode);
@@ -99,36 +153,45 @@
 	channel.bind('pusher:subscription_succeeded', function(members) {
 		me = channel.members.me;
 		userId = me.id;
-		userInfo = me.info;
 
 		$.ajax({
 			url: '/set_theater_owner',
-			data: {'owner': me.id, 'page_id': page_id}
+			data: {'owner': me.id, 'page_id': pageId}
 		}).success(function(data) {
-			videoowner = data.owner;
-			if (videoowner == userId) {
+			videoOwner = data.owner;
+			if (videoOwner == userId) {
 				vid.controls = true;
-			} else {
-
 			}
 		});
-
 	});
 
 	channel.bind('pusher:member_added', function(member) {
-		if (videoowner == userId) {
+		if (videoOwner == userId) {
 			eventSeeked();
 		} else {
 			vid.autoplay();
 		}
 	});
 
-	channel.bind(event_name, function(data) {
-		if (data.currentTime != -1) {
-			vid.currentTime = data.currentTime;
-			vid.play();
-		} else {
-			vid.pause(); 
+	channel.bind(eventName, function(data) {
+
+		if (data.currentTime) {
+			if(data.currentTime != -1) {
+				vid.currentTime = data.currentTime;
+				vid.play();
+			} else {
+				vid.pause();
+			}
+		} else if (data.urlMembers) {
+			$("#list-of-members").html("");
+			$.each(data.urlMembers, function(index,value) {
+				if (!value) {
+					value = "Anonymous"
+				}
+				$("#list-of-members").append("<i class='icon-user' />" + value + "&nbsp;&nbsp;")
+			});
+		} else if (data.chatMessage) {
+			$("#chat-area").append("<br><b>" + data.sender + "</b>: " + data.chatMessage)
 		}
 	});
    
