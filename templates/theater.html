@@ -12,7 +12,7 @@
 				<div class="span12 alert alert-success">
 					<h4>Now Playing:</h4>
 					<hr>
-					<video id="video-screen" class="pull-left">
+					<video id="video-screen" class="pull-left" width="80%">
 						<source src="{{ movie_url }}" type="video/mp4" />						
 					</video>
 					<span class="pull-right">
@@ -41,7 +41,7 @@
 				</div>
 			</div>
 			<div class="row-fluid">
-				<form class="form span12" action="#">
+				<form class="form span12">
 					<textarea id="chat-message" rows="3" class="span12"></textarea>
 					<br>
 					<span class="help-block"><small>Ctrl+Enter to send</small></span>
@@ -97,6 +97,7 @@
 	$("#chat-message").keypress(function (e) {
 		if (e.which == 10) {
 			submitChatMessage();
+			e.preventDefault();
 		}
 	})
 
