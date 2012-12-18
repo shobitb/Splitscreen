@@ -77,7 +77,7 @@
 
 	function get_movie_url(mov) {
 		$.ajax({
-			url: '/url_movie_map',
+			url: '/url_map',
 			data: { 'url': page_url,
 				   'movie': mov }
 		}).success(function(data) {
@@ -89,9 +89,20 @@
 		});
 	};
 
+	
 	$("#youtube-button").click(function() {
 		console.log($("#youtube-url").val());
-		get_movie_url($("#youtube-url").val());
+		$.ajax({
+			url: '/youtube_url_map',
+			data: { 'url': page_url,
+				   'movie': $("#youtube-url").val() }
+		}).success(function(data) {
+			if (data.status == "success") {
+				$("#movie-modal").modal("hide");
+				$("#movie-here").html($("#youtube-url").val());
+				$("#watch-button").css("display","block");
+			}
+		});
 	});
 		
 			

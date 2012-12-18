@@ -67,6 +67,24 @@ def url_movie_mapper():
 	url_movie_mapping[page_url] = movie_url
 	return jsonify({'status': 'success'})
 
+
+@app.route('/url_map')
+def url_map():
+	page_url = request.args.get('url')
+	movie = request.args.get('movie')
+	movie_url = 'http://d1sa8x6tbr5q03.cloudfront.net/'+movie+'.mp4'
+	url_movie_mapping[page_url] = movie_url
+	return jsonify({'status': 'success'})
+
+@app.route('/youtube_url_map')
+def youtube_url_map():
+	page_url = request.args.get('url')
+	movie = request.args.get('movie')
+	movie_url = movie
+	url_movie_mapping[page_url] = movie_url
+	return jsonify({'status': 'success'})
+
+
 @app.route('/pusher/presence_auth',methods=['POST'])
 def auth():
 	channel_name = request.form.get('channel_name')
