@@ -32,6 +32,18 @@
 					    	{% for m in movies %}
 					    	<li><a href="#" onclick='get_movie_url("{{ m }}")'>{{ m }}</a></li>
 					    	{% endfor %}
+<<<<<<< HEAD
+						<li>
+							OR Enter Youtube Video URL: <input type=text value="" id="youtube-url"/>
+							<button class="btn btn-primary" id="youtube-button">Youtube It!</button></li>
+						<li>
+							<form action="/Upload_To_S3" id="s3-form" enctype="multipart/form-data" method="post">
+							Upload to S3:<input name="file" type="file" />
+							<br>
+							<button class="btn btn-primary" id="UploadFileToS3-button">Upload</button></li>
+							</form>
+=======
+>>>>>>> b289aec44180813f54dc8c72609e5a274de71084
 						</ul>
 						...or enter a YouTube URL: <input type=text value="" id="youtube-url"/>
 						<button class="btn btn-primary" id="youtube-button">YouTube It!</button></li>	
@@ -102,7 +114,19 @@
 			}
 		});
 	});
-		
+	
+/*	$("#s3-form").submit(function(event) {
+		event.preventDefault()
+		$.ajax({
+			url: '/Upload_To_S3',
+			type: 'post'
+		}).success(function() {
+			alert("Success")
+		}).error(function(data) {
+			console.log(data)
+		})
+	});
+*/
 			
 	$("#watch-button").click(function(){
 		window.location="http://localhost:5000/theater/"+page_url;
