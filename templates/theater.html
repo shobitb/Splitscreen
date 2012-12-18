@@ -12,12 +12,9 @@
 				<div class="span12 alert alert-success">
 					<h4>Now Playing:</h4>
 					<hr>
-					<video id="video-screen" class="pull-left" width="80%">
-						<source src="{{ movie_url }}" type="video/mp4" />						
-					</video>
-					<span class="pull-right">
-						Controls
-					</span>
+					<div id="video-container">
+						Loading the player...
+					</div>
 				</div>
 			</div>
 
@@ -79,11 +76,18 @@
 	var userInfo = "Anonymous"
 	var videoOwner = "";
 
-	var vid = document.getElementById("video-screen");
-
 	$(document).ready(function() {
 		$("#member-modal").modal("show");
 	});
+
+	jwplayer("video-container").setup({
+        flashplayer: "https://s3.amazonaws.com/skreenprojectshobit/jwplayer.flash.swf",
+        file: "{{ movie_url }}",
+        height: 540,
+        provider: "rtmp",
+        streamer: "rtmp://sma33h7varidj.cloudfront.net/cfx/st",
+        width: 960
+    });
 
 	$("#member-modal-button").click(function() {
 		userInfo = $("#member-name-field").val();
@@ -121,21 +125,17 @@
 		})
 	}
 
-	$("#video-screen").click(function() {
-		if (videoOwner == userId) {
-			eventSeeked();
-		}
-	});
+	jwplayer().onSeek(function() { alert("Done") });
 	
 	function eventSeeked() {
 		$.ajax({
 			url: '/event',
 			type: 'GET',
-			data: { 'currentTime': vid.currentTime, 'page_id': pageId, 'member_id': userId }
+			data: { 'currentTime': jwplayer().getPosition(), 'page_id': pageId, 'member_id': userId }
 		});
     };
     
-    vid.addEventListener('pause', eventPaused);
+   	jwplayer().onPause(eventPaused())
 	
     function eventPaused() {
     	if (userId == videoOwner) {
@@ -161,7 +161,6 @@
 		}).success(function(data) {
 			videoOwner = data.owner;
 			if (videoOwner == userId) {
-				vid.controls = true;
 			}
 		});
 	});
@@ -170,7 +169,7 @@
 		if (videoOwner == userId) {
 			eventSeeked();
 		} else {
-			vid.autoplay();
+			jwplayer().play();
 		}
 	});
 
@@ -178,10 +177,9 @@
 
 		if (data.currentTime) {
 			if(data.currentTime != -1) {
-				vid.currentTime = data.currentTime;
-				vid.play();
+				jwplayer().seek(data.currentTime);
 			} else {
-				vid.pause();
+				jwplayer().pause();
 			}
 		} else if (data.urlMembers) {
 			$("#list-of-members").html("");

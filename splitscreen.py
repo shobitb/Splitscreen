@@ -56,23 +56,24 @@ def create_url():
 	url_id = ''.join(random.choice(chars) for x in range(size))
 	return jsonify({'url': url_id})
 
+""""
 @app.route('/url_movie_map')
 def url_movie_mapper():
 	page_url = request.args.get('url')
 	movie = request.args.get('movie')
-	connection = S3Connection(config.s3_key,config.s3_secret)
+	connection = S3Connection(con0fig.s3_key,config.s3_secret)
 	bucket = connection.get_bucket(bucket_name)
 	key = bucket.get_key(movie+'.mp4')
 	movie_url = key.generate_url(18000) # url is available for 18000 seconds i.e. 5 hours
 	url_movie_mapping[page_url] = movie_url
 	return jsonify({'status': 'success'})
-
+"""
 
 @app.route('/url_map')
 def url_map():
 	page_url = request.args.get('url')
 	movie = request.args.get('movie')
-	movie_url = 'http://d1sa8x6tbr5q03.cloudfront.net/'+movie+'.mp4'
+	movie_url = 'http://d8gfr27j5890z.cloudfront.net/'+movie+'.mp4'
 	url_movie_mapping[page_url] = movie_url
 	return jsonify({'status': 'success'})
 
@@ -84,6 +85,7 @@ def youtube_url_map():
 	url_movie_mapping[page_url] = movie_url
 	return jsonify({'status': 'success'})
 
+<<<<<<< HEAD
 @app.route('/Upload_To_S3',methods=['POST'])
 def Upload_To_S3():
 	connection = S3Connection("AKIAIMC67ZNDJPG4KOOA","ffrSB3O6PPd1KfPB4djBl49Ec0BRO+f9gpm8cn83")
@@ -97,6 +99,8 @@ def Upload_To_S3():
 	
 
 
+=======
+>>>>>>> b289aec44180813f54dc8c72609e5a274de71084
 @app.route('/pusher/presence_auth',methods=['POST'])
 def auth():
 	channel_name = request.form.get('channel_name')
