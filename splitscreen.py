@@ -84,6 +84,18 @@ def youtube_url_map():
 	url_movie_mapping[page_url] = movie_url
 	return jsonify({'status': 'success'})
 
+@app.route('/Upload_To_S3',methods=['POST'])
+def Upload_To_S3():
+	connection = S3Connection("AKIAIMC67ZNDJPG4KOOA","ffrSB3O6PPd1KfPB4djBl49Ec0BRO+f9gpm8cn83")
+	bucket = connection.get_bucket("splitscreenmoviesbucket")  # bucket names must be unique
+  	with open(request.files['file'].filename, 'wb+') as destination:
+      	    destination.write(request.files['file'].read())
+	key = bucket.new_key(destination.name)
+  	key.set_contents_from_file(open(destination.name))
+  	key.set_acl('public-read')
+	return redirect('/')
+	
+
 
 @app.route('/pusher/presence_auth',methods=['POST'])
 def auth():
