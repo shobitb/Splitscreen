@@ -32,11 +32,9 @@
 					    	{% for m in movies %}
 					    	<li><a href="#" onclick='get_movie_url("{{ m }}")'>{{ m }}</a></li>
 					    	{% endfor %}
-						<li>
-							OR Enter Youtube Video URL: <input type=text value="" id="youtube-url"/>
-							<button class="btn btn-primary" id="youtube-button">Youtube It!</button></li>	
 						</ul>
-					
+						...or enter a YouTube URL: <input type=text value="" id="youtube-url"/>
+						<button class="btn btn-primary" id="youtube-button">YouTube It!</button></li>	
 					  </div>
 					  <div class="modal-footer">
 					    <button class="btn" data-dismiss="modal" aria-hidden="true">Close</button>
