@@ -32,7 +32,11 @@
 					    	{% for m in movies %}
 					    	<li><a href="#" onclick='get_movie_url("{{ m }}")'>{{ m }}</a></li>
 					    	{% endfor %}
+						<li>
+							OR Enter Youtube Video URL: <input type=text value="" id="youtube-url"/>
+							<button class="btn btn-primary" id="youtube-button">Youtube It!</button></li>	
 						</ul>
+					
 					  </div>
 					  <div class="modal-footer">
 					    <button class="btn" data-dismiss="modal" aria-hidden="true">Close</button>
@@ -53,8 +57,10 @@
 	</p>
 </div>
 
+
 <script type="text/javascript">
 
+		
 	var page_url = "";
 
 	$("#create-url").click(function() {
@@ -83,6 +89,12 @@
 		});
 	};
 
+	$("#youtube-button").click(function() {
+		console.log($("#youtube-url").val());
+		get_movie_url($("#youtube-url").val());
+	});
+		
+			
 	$("#watch-button").click(function(){
 		window.location="http://localhost:5000/theater/"+page_url;
 	});
