@@ -81,7 +81,7 @@
 	});
 
 	jwplayer("video-container").setup({
-        flashplayer: "https://s3.amazonaws.com/skreenprojectshobit/jwplayer.flash.swf",
+        flashplayer: "../static/jwplayer.flash.swf",
         file: "{{ movie_url }}",
         height: 540,
         provider: "rtmp",
@@ -125,7 +125,11 @@
 		})
 	}
 
-	jwplayer().onSeek(function() { alert("Done") });
+	jwplayer().onSeek(function() {
+		if (videoOwner == userId) {
+			eventSeeked();
+		}
+	});
 	
 	function eventSeeked() {
 		$.ajax({
@@ -160,7 +164,8 @@
 			data: {'owner': me.id, 'page_id': pageId}
 		}).success(function(data) {
 			videoOwner = data.owner;
-			if (videoOwner == userId) {
+			if (videoOwner != userId) {
+				jwplayer().setControls(false)
 			}
 		});
 	});
