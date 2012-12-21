@@ -79,7 +79,9 @@
 		</div>
 	</div>
 	<!-- END MODALS -->
-
+	<footer style="padding: 10px">
+		<img src="../static/img/Powered-by-Amazon-Web-Services.jpg" class="pull-right"/>
+	</footer>
 	
 <script type="text/javascript">
 
@@ -133,6 +135,10 @@
 		});
 	});
 
+	jwplayer().onPause(function() {
+		eventPaused()
+	})
+
 	$("#chat-message").keypress(function (e) {
 		if (e.which == 10) {
 			submitChatMessage();
@@ -141,8 +147,7 @@
 	})
 
 	$("#sync-button").click(function(){
-		if (userId == videoOwner)
-			eventSeeked()
+		eventSeeked()
 	})
 
 	$("#chat-send-button").click(function(event) {
@@ -166,21 +171,29 @@
 	}
 
 	jwplayer().onSeek(function() {
-		if (videoOwner == userId) {
-			eventSeeked();
-		}
+		eventSeeked()
 	});
 	
 	function eventSeeked() {
-		console.log(jwplayer().getState())
-		$.ajax({
-			url: '/event',
-			type: 'GET',
-			data: { 'currentTime': jwplayer().getPosition(), 'page_id': pageId, 'member_id': userId }
-		})
+		if (userId == videoOwner) {
+			$.ajax({
+				url: '/event',
+				type: 'GET',
+				data: { 'currentTime': jwplayer().getPosition(), 'page_id': pageId, 'member_id': userId }
+			})
+		}
+    };
+
+    function eventPaused() {
+		if (userId == videoOwner) {
+			$.ajax({
+				url: '/event',
+				type: 'GET',
+				data: { 'currentTime': -1, 'page_id': pageId, 'member_id': userId }
+			})
+		}
     };
     
-
 	channel.bind('pusher:subscription_error', function(statusCode) {
 		alert('Problem subscribe to "presence-channel": ' + statusCode);
 	});
@@ -194,7 +207,7 @@
 		}).success(function(data) {
 			videoOwner = data.owner;
 			password = data.password
-			if (videoOwner == userId) {		
+			if (videoOwner == userId) {	
 				$("#sync-button").show();
 			} else {
 				$("#take-control").show()
@@ -205,14 +218,18 @@
 	channel.bind('pusher:member_added', function(member) {
 		if (videoOwner == userId) {
 			eventSeeked();
-		} else if (jwplayer().getState() == 'PAUSED') {
+		} else {
 			jwplayer().play();
 		}
 	});
 
 	channel.bind(eventName, function(data) {
 		if (data.currentTime) {
-			jwplayer().seek(data.currentTime);
+			if (data.currentTime != -1)
+				jwplayer().seek(data.currentTime);
+			else if (videoOwner != userId) {
+				jwplayer().pause()
+			}
 		} else if (data.urlMembers) {
 			$("#list-of-members").html("");
 			$.each(data.urlMembers, function(index,value) {

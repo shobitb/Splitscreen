@@ -1,6 +1,6 @@
 from flask import Flask
 from flask import render_template
-from flask import url_for, request, redirect
+from flask import url_for, request, redirect, Response
 from flask import jsonify
 from boto.s3.connection import S3Connection
 import jinja2
@@ -154,6 +154,15 @@ def set_theater_owner():
 		url_owner_mapping[page] = owner
 		url_password_mapping[page] = passwd
 	return jsonify({'owner': url_owner_mapping[page], 'password': url_password_mapping[page]})
+
+@app.route('/member_removed', methods=['POST'])
+def member_removed():
+	member_name = request.form.get('user_info')
+	page_id = request.form.get('page_id')
+	url_members_mapping[page_id].remove(member_name)
+	p = pusher.Pusher(app_id=config.app_id, key=config.app_key, secret=config.app_secret)
+	p['presence-splitscreen-'+page_id].trigger('splitscreen-event-'+page_id, { 'urlMembers': url_members_mapping[page_id] })
+	return Response(status=200)
 
 @app.route('/change_owner',methods=['POST'])
 def change_owner():
