@@ -1,12 +1,12 @@
 {% extends "base.html" %}
 {% block content %}
-<div class="hero-unit container">
+<div class="hero-unit">
 	<h1>Splitscreen</h1>
 	<p>Create your own virtual theater in 3 easy steps -- Create - Choose - Watch!</p>
 	<p>
-		<div class="container-fluid">
+		<div class="container">
 			<!-- ===================== CREATE ===================== -->
-			<div class="row-fluid">
+			<div class="row">
 				<div class="span12">
 					<h4>Create a URL</h4>
 					<button class="btn btn-primary" id="create-url">Create</button>
@@ -16,7 +16,7 @@
 			</div>
 			<!-- ================================================================== -->
 			<!-- ===================== CHOOSE ===================== -->
-			<div class="row-fluid">
+			<div class="row">
 				<div class="span12">
 					<h4>Choose what to watch</h4>
 					<a href="#movie-modal" role="button" class="btn btn-primary" data-toggle="modal">Choose</a>
@@ -28,35 +28,40 @@
 					    <h3 id="modal-label">Select from the following movies</h3>
 					  </div>
 					  <div class="modal-body">
-					  	<ul>
-					    	{% for m in movies %}
-					    	<li><a href="#" onclick='get_movie_url("{{ m }}")'>{{ m }}</a></li>
-					    	{% endfor %}
-<<<<<<< HEAD
-						<li>
-							OR Enter Youtube Video URL: <input type=text value="" id="youtube-url"/>
-							<button class="btn btn-primary" id="youtube-button">Youtube It!</button></li>
-						<li>
-							<form action="/Upload_To_S3" id="s3-form" enctype="multipart/form-data" method="post">
-							Upload to S3:<input name="file" type="file" />
-							<br>
-							<button class="btn btn-primary" id="UploadFileToS3-button">Upload</button></li>
-							</form>
-=======
->>>>>>> b289aec44180813f54dc8c72609e5a274de71084
-						</ul>
-						...or enter a YouTube URL: <input type=text value="" id="youtube-url"/>
-						<button class="btn btn-primary" id="youtube-button">YouTube It!</button></li>	
+						  	<ul>
+						    	{% for m in movies %}
+						    	<li><a href="#" onclick='get_movie_url("{{ m }}")'>{{ m }}</a></li>
+						    	{% endfor %}
+							</ul>
+					  </div>
+					  <div class="modal-header">
+					    <button type="button" class="close" data-dismiss="modal" aria-hidden="true">×</button>
+					    <h3 id="modal-label">...or enter a YouTube URL</h3>
+					  </div>
+					  <div class="modal-body">
+					  		<div class="controls-group">
+								<div class="control">
+									<input type="text" class="input-xlarge" id="youtube-url"/>
+								</div>
+								<div class="control">
+									<button class="btn btn-primary" id="youtube-button">YouTube It!</button>
+								</div>
+							</div>
+							<!-- <form action="/Upload_To_S3" id="s3-form" enctype="multipart/form-data" method="post">
+								Upload to S3:<input name="file" type="file" />
+								<br>
+								<button class="btn btn-primary" id="UploadFileToS3-button">Upload</button>
+							</form> -->
 					  </div>
 					  <div class="modal-footer">
-					    <button class="btn" data-dismiss="modal" aria-hidden="true">Close</button>
+					  	<button class="btn" data-dismiss="modal" aria-hidden="true">Close</button>
 					  </div>
 					</div>
 				</div>
 			</div>
 			<!-- ================================================================== -->
 			<!-- ===================== WATCH ===================== -->
-			<div class="row-fluid">
+			<div class="row">
 				<div class="span12">
 					<h4>Enjoy the movie!</h4>
 					<button id="watch-button" class="btn btn-primary" style="display:none">Watch!</button>	
@@ -66,8 +71,20 @@
 		</div>
 	</p>
 </div>
-
-
+<div class="container">
+	<div class="row-fluid" style="background-color: #F0F0F0 ">
+		<div class="span1">
+			<img src="../static/img/facebook_pic.jpg"/>
+		</div>
+		<div class="span11">
+			<div class="pull-left">
+				<h4>Have a Facebook account?</h4>
+				<a href="/fb_login">Login</a> to upload and watch your own videos!
+			</div>
+		</div>
+		</div>
+	</div>
+</div>
 <script type="text/javascript">
 
 		
@@ -115,7 +132,8 @@
 		});
 	});
 	
-/*	$("#s3-form").submit(function(event) {
+/*	upload moved to fb_login.html
+	$("#s3-form").submit(function(event) {
 		event.preventDefault()
 		$.ajax({
 			url: '/Upload_To_S3',

@@ -1,0 +1,26 @@
+{% extends "base.html" %}
+
+{% block content %}
+  <legend id = "greeting">
+    Hi, {{ name }}
+	</legend>
+
+	<div id="upload-form">
+		<form action="/upload_to_s3" id="s3-form" enctype="multipart/form-data" method="post">
+      <div class="controls-group">
+        <div class="control">
+          <label for="file-upload"></label>
+          <input type="file" id="file-upload" name="file" />
+          <input type="hidden" id="useridhere">{{ id }}</input>
+        </div>
+      </div>
+       <div class="controls-group">
+        <div class="control">
+          <button class="btn btn-primary" type="submit">Submit</button>
+          <button class="btn" onclick="logout()">Logout</button>
+        </div>
+      </div>      
+    </form> 
+  </div>
+
+{% endblock %}

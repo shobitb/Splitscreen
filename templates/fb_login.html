@@ -1,0 +1,181 @@
+{% extends "base.html" %}
+{% block content %}
+<div id="fb-root"></div>
+<script>
+    var name = ""
+    var id = ""
+    window.fbAsyncInit = function () {
+        FB.init({
+        appId: '259052434221139', // App ID
+        status: true, // check login status
+        cookie: true, // enable cookies to allow the server to access the session
+        xfbml: true  // parse XFBML
+        });
+
+        FB.getLoginStatus(function(response) {
+        	if (response.status === 'not_authorized') {
+          	FB.login(function(response) {
+          		if (response.authResponse) {
+                id = response.authResponse.userID
+          			set_up_bucket(id)
+          		} else {
+          			window.location = '/'
+          		}
+          	})
+          } else if (response.status === 'connected') {
+            id = response.authResponse.userID
+            set_up_bucket(id)
+          } else {
+            FB.login(function(response) {
+              if (response.authResponse) {
+                id = response.authResponse.userID
+                set_up_bucket(id)
+              } else {
+                window.location = '/'
+              }
+            })
+          }
+       });
+    };
+
+    function set_up_bucket(user) {
+      $.ajax({
+        url: '/set_up_bucket_for_user',
+        data: { userID: user },
+        type: 'POST'
+      }).success(function(data) {
+            $("#please-wait").remove()
+            name = data.name
+            $("#main_fb_content").show()
+            $("#greeting").html('Hi, ' + name.split(' ')[0] + '!')
+            $('#useridhere').val(user)
+            $.each(data.videos, function(index, value) {
+              $("#videos-here-list").append("<li><a href='#' onclick=\"get_movie_url('" + value + "')\">" + value + "</a></li>")
+            })
+      }).error(function() {
+         $("#please-wait").html('Something went wrong. Please refresh the page.')
+      })
+    }
+
+    function logout() {
+    	FB.logout();
+    	window.location = '/'
+    }
+
+    // Load the SDK Asynchronously
+    (function (d) {
+        var js, id = 'facebook-jssdk', ref = d.getElementsByTagName('script')[0];
+        if (d.getElementById(id)) { return; }
+        js = d.createElement('script'); js.id = id; js.async = true;
+        js.src = "//connect.facebook.net/en_US/all.js";
+        ref.parentNode.insertBefore(js, ref);
+    } (document));
+
+</script>
+
+<div id="please-wait">
+  Loading...
+</div>
+
+<div id="main_fb_content" class="hide">
+    <legend id = "greeting">
+  	</legend>
+
+  	<div id="upload-form">
+  		<form action="/upload_to_s3" id="s3-form" enctype="multipart/form-data" method="post">
+        <div class="controls-group">
+          <div class="control">
+            <label for="file-upload" />
+            <input type="file" id="file-upload" name="file" />
+          </div>
+
+            <input type="hidden" id="useridhere" name="useridhere"></input>
+        </div>
+         <div class="controls-group">
+          <div class="control">
+            <button class="btn btn-primary" type="submit">Submit</button>
+            <button class="btn" onclick="logout()">Logout</button>
+          </div>
+        </div>      
+      </form> 
+    </div>
+  <hr>
+      <!-- ===================== CREATE ===================== -->
+      <div class="row">
+        <div class="span12">
+          <h4>Create a URL</h4>
+          <button class="btn btn-primary" id="create-url">Create</button>
+          <div id="url-here"></div>
+          <button id="copy-button" style="display:none">Copy</button> 
+        </div>
+      </div>
+      <!-- ================================================================== -->
+      <!-- ===================== CHOOSE ===================== -->
+      <div class="row">
+        <div class="span12">
+          <h4>Choose from your movies</h4>
+          <a href="#movie-modal" role="button" class="btn btn-primary" data-toggle="modal">Choose</a>
+          <div id="movie-here"></div>
+          <!-- Modal -->
+          <div id="movie-modal" class="modal hide fade" tabindex="-1" role="dialog">
+            <div class="modal-header">
+              <button type="button" class="close" data-dismiss="modal" aria-hidden="true">×</button>
+              <h3 id="modal-label">These are your movies</h3>
+            </div>
+            <div class="modal-body">
+              <ul id="videos-here-list">
+              </ul>
+            </div>
+            <div class="modal-footer">
+              <button class="btn" data-dismiss="modal" aria-hidden="true">Close</button>
+            </div>
+          </div>
+        </div>
+      </div>
+      <!-- ================================================================== -->
+      <!-- ===================== WATCH ===================== -->
+      <div class="row">
+        <div class="span12">
+          <h4>Enjoy the movie!</h4>
+          <button id="watch-button" class="btn btn-primary" style="display:none">Watch!</button>  
+        </div>
+      </div>
+      <!-- ================================================================== -->
+</div>
+
+<script>
+var page_url = "";
+
+  $("#create-url").click(function() {
+    $.ajax({
+      url: '/create_url',
+      type: 'get'
+    }).success(function(data) {
+      page_url = data.url;
+      $("#create-url").hide();
+      $("#url-here").html("<tt>http://localhost:5000/theater/"+page_url+"</tt>");
+      $("#copy-button").css("display","block");
+    });
+  });
+
+function get_movie_url(mov) {
+    $.ajax({
+      url: '/user_url_map',
+      data: { 'url': page_url,
+           'movie': mov,
+           'bucket' : id + 'splitscreenmoviesbucket' }
+    }).success(function(data) {
+      if (data.status == "success") {
+        $("#movie-modal").modal("hide");
+        $("#movie-here").html(mov);
+        $("#watch-button").css("display","block");
+      }
+    });
+  };
+
+  $("#watch-button").click(function(){
+    window.location="/theater/"+page_url;
+  });
+</script>
+
+{% endblock %}

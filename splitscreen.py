@@ -7,7 +7,7 @@ import jinja2
 import pusher
 import config
 import string, random
-import os, urllib
+import os, urllib, urllib2, json
 
 app = Flask(__name__)
 
@@ -15,6 +15,7 @@ app = Flask(__name__)
 url_movie_mapping = {}
 url_owner_mapping = {}
 url_members_mapping = {}
+url_password_mapping = {}
 bucket_name = "splitscreenmoviesbucket"
 
 @app.route('/')
@@ -56,18 +57,14 @@ def create_url():
 	url_id = ''.join(random.choice(chars) for x in range(size))
 	return jsonify({'url': url_id})
 
-""""
-@app.route('/url_movie_map')
-def url_movie_mapper():
+@app.route('/user_url_map')
+def user_url_map():
 	page_url = request.args.get('url')
 	movie = request.args.get('movie')
-	connection = S3Connection(con0fig.s3_key,config.s3_secret)
-	bucket = connection.get_bucket(bucket_name)
-	key = bucket.get_key(movie+'.mp4')
-	movie_url = key.generate_url(18000) # url is available for 18000 seconds i.e. 5 hours
+	bucket_name = request.args.get('bucket')
+	movie_url = "https://s3.amazonaws.com/" + bucket_name + "/" + movie
 	url_movie_mapping[page_url] = movie_url
 	return jsonify({'status': 'success'})
-"""
 
 @app.route('/url_map')
 def url_map():
@@ -85,22 +82,36 @@ def youtube_url_map():
 	url_movie_mapping[page_url] = movie_url
 	return jsonify({'status': 'success'})
 
-<<<<<<< HEAD
-@app.route('/Upload_To_S3',methods=['POST'])
-def Upload_To_S3():
-	connection = S3Connection("AKIAIMC67ZNDJPG4KOOA","ffrSB3O6PPd1KfPB4djBl49Ec0BRO+f9gpm8cn83")
-	bucket = connection.get_bucket("splitscreenmoviesbucket")  # bucket names must be unique
+@app.route('/upload_to_s3',methods=['POST'])
+def upload_to_s3():
+	connection = S3Connection(config.s3_key,config.s3_secret)
+	bucket_name = request.form.get('useridhere')+'splitscreenmoviesbucket'
+	bucket = connection.get_bucket(bucket_name)
   	with open(request.files['file'].filename, 'wb+') as destination:
-      	    destination.write(request.files['file'].read())
+  		destination.write(request.files['file'].read())
 	key = bucket.new_key(destination.name)
   	key.set_contents_from_file(open(destination.name))
   	key.set_acl('public-read')
-	return redirect('/')
+  	os.remove(destination.name)
+	return redirect('/fb_login')
+
+@app.route('/set_up_bucket_for_user',methods=['POST'])
+def set_up_bucket():
+	connection = S3Connection(config.s3_key,config.s3_secret)
+	userid = request.form.get('userID')
+	videos = []
+	name = json.load((urllib2.urlopen('https://graph.facebook.com/'+userid+'?fields=name')))['name']
+	buckets = connection.get_all_buckets()
+	for b in buckets:
+		if b.name == userid+'splitscreenmoviesbucket':
+			user_videos = connection.get_bucket(b.name).list()
+			for v in user_videos:
+				videos.append(v.name)
+				return jsonify(name=name,videos=videos)
+	connection.create_bucket(userid+'splitscreenmoviesbucket')
+	return jsonify(name=name,videos=videos)
+
 	
-
-
-=======
->>>>>>> b289aec44180813f54dc8c72609e5a274de71084
 @app.route('/pusher/presence_auth',methods=['POST'])
 def auth():
 	channel_name = request.form.get('channel_name')
@@ -136,9 +147,25 @@ def add_member():
 def set_theater_owner():
 	page = request.args.get('page_id');
 	owner = request.args.get('owner')
+	chars = string.ascii_uppercase + string.ascii_lowercase
+	size = 6
+	passwd = ''.join(random.choice(chars) for x in range(size))
 	if not url_owner_mapping.has_key(page):
 		url_owner_mapping[page] = owner
-	return jsonify({'owner': url_owner_mapping[page]})
+		url_password_mapping[page] = passwd
+	return jsonify({'owner': url_owner_mapping[page], 'password': url_password_mapping[page]})
+
+@app.route('/change_owner',methods=['POST'])
+def change_owner():
+	page_id = request.form.get('page_id')
+	owner = request.form.get('newOwner')
+	url_owner_mapping[page_id] = owner
+	chars = string.ascii_uppercase + string.ascii_lowercase
+	size = 6
+	passwd = ''.join(random.choice(chars) for x in range(size))
+	p = pusher.Pusher(app_id=config.app_id, key=config.app_key, secret=config.app_secret)
+	p['presence-splitscreen-'+page_id].trigger('splitscreen-event-'+page_id, {'ownerChange': owner, 'newPassword': passwd})
+	return jsonify(status="success")
 
 @app.route('/send_chat', methods=['POST'])
 def send_chat():
@@ -148,6 +175,10 @@ def send_chat():
 	p = pusher.Pusher(app_id=config.app_id, key=config.app_key, secret=config.app_secret)
 	p['presence-splitscreen-'+page_id].trigger('splitscreen-event-'+page_id, {'chatMessage': chat_message, 'sender': sender})
 	return jsonify({'userInfo': sender})
+
+@app.route('/fb_login')
+def fb_login():
+	return render_template('fb_login.html')
 
 if __name__ == "__main__":
 	app.run(debug=True)

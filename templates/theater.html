@@ -8,29 +8,33 @@
 
 	<div class="row-fluid">
 		<div class="span8">
-			<div class="row-fluid">
-				<div class="span12 alert alert-success">
-					<h4>Now Playing:</h4>
-					<hr>
+			<div class="row-fluid alert-success">
+				<h4> Now Playing: </h4>
+				<hr>
+			</div>
+			<div class="row-fluid alert-info">
+				<div class="span8">
 					<div id="video-container">
-						Loading the player...
 					</div>
 				</div>
+				<div class="span4">
+					<h4> Controls </h4>
+					<p>
+					<button class="btn btn-primary hide" id="take-control">Take Control</button> </p>
+					<p>
+					<button class="btn btn-primary hide" id="sync-button">Sync</button> </p>
+				</div>
 			</div>
-
-			<div class="row-fluid">
-				<div class="span12 alert alert-info">
-					<h4>Who's In:</h4>
-					<hr>
-					<div id="list-of-members">
-					</div>
+			<div class="row-fluid alert-error">
+				<h4> Who's In:</h4>
+				<hr> 
+				<div id="list-of-members">
 				</div>
 			</div>
 		</div>
-
-		<div class="span4 alert alert-warning">
+		<div class="span4 alert">
 			<div class="row-fluid">
-				<div class="span12">
+				<div>
 					<h4>Chat:</h4>
 					<hr>
 					<div id="chat-area" style="height:350px; overflow:auto;color:black">
@@ -38,28 +42,43 @@
 				</div>
 			</div>
 			<div class="row-fluid">
-				<form class="form span12">
-					<textarea id="chat-message" rows="3" class="span12"></textarea>
+				<form>
+					<textarea id="chat-message" rows="3"></textarea>
 					<br>
 					<span class="help-block"><small>Ctrl+Enter to send</small></span>
-					<button type="submit" class="pull-right btn btn-primary" id="chat-send-button">Send</button>
+					<button type="submit" class=" btn btn-primary" id="chat-send-button">Send</button>
 				</form>
 			</div>
 		</div>
+	</div>
 
-		<div id="member-modal" class="modal hide fade" tabindex="-1" role="dialog">
-			<div class="modal-header">
-				<button type="button" class="close" data-dismiss="modal" aria-hidden="true">×</button>
-				<h3 id="modal-label">Enter your name</h3>
-			</div>
-			<div class="modal-body">
-				<input type="text" id="member-name-field" name="member_name" class="span12" />
-			</div>
-			<div class="modal-footer">
-				<button class="btn btn-primary" id="member-modal-button" data-dismiss="modal" aria-hidden="true">Submit</button>
-			</div>
+	<!-- MODALS -->
+	<div id="member-modal" class="modal hide fade" tabindex="-1" role="dialog">
+		<div class="modal-header">
+			<button type="button" class="close" data-dismiss="modal" aria-hidden="true">×</button>
+			<h3 id="modal-label">Enter your name</h3>
+		</div>
+		<div class="modal-body">
+			<input type="text" id="member-name-field" name="member_name" class="input-xlarge"  />
+		</div>
+		<div class="modal-footer">
+			<button class="btn btn-primary" id="member-modal-button" data-dismiss="modal" aria-hidden="true">Submit</button>
 		</div>
 	</div>
+
+	<div id="password-modal" class="modal hide fade" tabindex="-1" role="dialog">
+		<div class="modal-header">
+			<button type="button" class="close" data-dismiss="modal" aria-hidden="true">×</button>
+			<h3 id="modal-label">Password:</h3>
+		</div>
+		<div class="modal-body">
+			<input type="password" id="password-field" class="input-xlarge" />
+		</div>
+		<div class="modal-footer">
+			<button class="btn btn-primary" id="password-modal-button" data-dismiss="modal" aria-hidden="true">Submit</button>
+		</div>
+	</div>
+	<!-- END MODALS -->
 
 	
 <script type="text/javascript">
@@ -70,6 +89,7 @@
     var eventName = 'splitscreen-event-'+pageId;
     var pusher = new Pusher('1578e782124a7bedfabc');
 	var channel = pusher.subscribe(channelName);
+	var password = "";
 
 	var me;
 	var userId;
@@ -83,11 +103,26 @@
 	jwplayer("video-container").setup({
         flashplayer: "../static/jwplayer.flash.swf",
         file: "{{ movie_url }}",
-        height: 540,
         provider: "rtmp",
-        streamer: "rtmp://sma33h7varidj.cloudfront.net/cfx/st",
-        width: 960
+        streamer: "rtmp://sma33h7varidj.cloudfront.net/cfx/st"
     });
+
+    $("#take-control").click(function() {
+    	$("#password-modal").modal("show")
+    })
+
+    $("#password-modal-button").click(function() {
+       	pwd = $("#password-field").val()
+    	if (pwd == password) {
+    		$.ajax({
+    			url: '/change_owner',
+    			data: { 'newOwner': userId, 'page_id': pageId },
+    			type: 'post'
+    		});
+    	} else {
+    		alert('Passwords do not match');
+    	}
+    })
 
 	$("#member-modal-button").click(function() {
 		userInfo = $("#member-name-field").val();
@@ -105,8 +140,14 @@
 		}
 	})
 
-	$("#chat-send-button").click(function() {
+	$("#sync-button").click(function(){
+		if (userId == videoOwner)
+			eventSeeked()
+	})
+
+	$("#chat-send-button").click(function(event) {
 		submitChatMessage();
+		event.preventDefault()
 	});
 
 	function submitChatMessage() {
@@ -117,8 +158,7 @@
 			data: { 'chat': chatMessage, 'page_id': pageId, 'sender': userInfo }
 		}).success(function() {
 			$("#chat-message").val("");
-			$("#chat-area").each( function() 
-			{
+			$("#chat-area").each( function() {
 			   var scrollHeight = Math.max(this.scrollHeight, this.clientHeight);
 			   this.scrollTop = scrollHeight - this.clientHeight;
 			});
@@ -132,40 +172,32 @@
 	});
 	
 	function eventSeeked() {
+		console.log(jwplayer().getState())
 		$.ajax({
 			url: '/event',
 			type: 'GET',
 			data: { 'currentTime': jwplayer().getPosition(), 'page_id': pageId, 'member_id': userId }
-		});
+		})
     };
     
-   	jwplayer().onPause(eventPaused())
-	
-    function eventPaused() {
-    	if (userId == videoOwner) {
-    		$.ajax({
-				url: '/event',
-				type: 'GET',
-				data: { 'currentTime': -1, 'page_id': pageId, 'member_id': userId }
-			});
-    	}
-    };
 
 	channel.bind('pusher:subscription_error', function(statusCode) {
-			alert('Problem subscribe to "presence-channel": ' + statusCode);
+		alert('Problem subscribe to "presence-channel": ' + statusCode);
 	});
 
 	channel.bind('pusher:subscription_succeeded', function(members) {
 		me = channel.members.me;
 		userId = me.id;
-
 		$.ajax({
 			url: '/set_theater_owner',
-			data: {'owner': me.id, 'page_id': pageId}
+			data: { 'owner': me.id, 'page_id': pageId }
 		}).success(function(data) {
 			videoOwner = data.owner;
-			if (videoOwner != userId) {
-				jwplayer().setControls(false)
+			password = data.password
+			if (videoOwner == userId) {		
+				$("#sync-button").show();
+			} else {
+				$("#take-control").show()
 			}
 		});
 	});
@@ -173,19 +205,14 @@
 	channel.bind('pusher:member_added', function(member) {
 		if (videoOwner == userId) {
 			eventSeeked();
-		} else {
+		} else if (jwplayer().getState() == 'PAUSED') {
 			jwplayer().play();
 		}
 	});
 
 	channel.bind(eventName, function(data) {
-
 		if (data.currentTime) {
-			if(data.currentTime != -1) {
-				jwplayer().seek(data.currentTime);
-			} else {
-				jwplayer().pause();
-			}
+			jwplayer().seek(data.currentTime);
 		} else if (data.urlMembers) {
 			$("#list-of-members").html("");
 			$.each(data.urlMembers, function(index,value) {
@@ -196,6 +223,17 @@
 			});
 		} else if (data.chatMessage) {
 			$("#chat-area").append("<br><b>" + data.sender + "</b>: " + data.chatMessage)
+		} else if (data.ownerChange) {
+			videoOwner = data.ownerChange
+			password = data.newPassword
+			if (videoOwner == userId) {
+				alert("New password " + password)
+				$("#sync-button").show()
+				$("#take-control").hide()
+			} else {
+				$("#take-control").show()
+				$("#sync-button").hide()
+			}
 		}
 	});
    
